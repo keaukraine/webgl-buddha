@@ -1,4 +1,4 @@
-# Bitcoin WebGL demo
+# 3D Buddha WebGL demo
 
 This demo is a WebGL port of Android live wallpaper *[Bitcoins 3D Live Wallpaper](https://play.google.com/store/apps/details?id=org.androidworks.livewallpaperbitcoins)*.
 
@@ -12,8 +12,9 @@ Works in latest Chrome, Firefox, Safari and Edge.
 * Material Icons by Google used under Apache License https://design.google.com/icons/
 * RequireJS, Released under the  MIT license https://github.com/requirejs/requirejs/blob/master/LICENSE
 * jQuery used under the MIT license https://jquery.org/license/
-* gl-matrix, a high performance matrix and vector operations by Brandon Jones and Colin MacKenzie IV 
+* gl-matrix, a high performance matrix and vector operations by Brandon Jones and Colin MacKenzie IV
 * WebGL initialization code is based on http://learningwebgl.com/ tutorials
+* Google Play and the Google Play logo are trademarks of Google LLC.
 
 #License
 

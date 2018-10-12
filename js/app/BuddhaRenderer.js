@@ -1,24 +1,26 @@
 'use strict';
 
 define([
-        'framework/BaseRenderer',
-        'jquery',
-        'DiffuseShader',
-        'LightShaftShader',
-        'SphericalMapLMShader',
-        'LMTableShader',
-        'framework/utils/MatrixUtils',
-        'framework/FullModel',
-        'framework/UncompressedTextureLoader',
-        'framework/CompressedTextureLoader'
-    ],
-    function(
+    'framework/BaseRenderer',
+    'jquery',
+    'DiffuseShader',
+    'LightShaftShader',
+    'SphericalMapLMShader',
+    'LMTableShader',
+    'PointSpriteScaledColoredShader',
+    'framework/utils/MatrixUtils',
+    'framework/FullModel',
+    'framework/UncompressedTextureLoader',
+    'framework/CompressedTextureLoader'
+],
+    function (
         BaseRenderer,
         $,
         DiffuseShader,
         LightShaftShader,
         SphericalMapLMShader,
         LMTableShader,
+        PointSpriteScaledColoredShader,
         MatrixUtils,
         FullModel,
         UncompressedTextureLoader,
@@ -40,14 +42,48 @@ define([
                 this.tableTextureType = 'marble'; // floor texture: 'granite', 'marble', 'wood3'
                 this.skyTextureType = 'sky3';
 
-                this.ITEMS_TO_LOAD = 11; // total number of OpenGL buffers+textures to load
+                this.ITEMS_TO_LOAD = 13; // total number of OpenGL buffers+textures to load
                 this.FLOAT_SIZE_BYTES = 4; // float size, used to calculate stride sizes
                 this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * this.FLOAT_SIZE_BYTES;
                 this.TRIANGLE_VERTICES_DATA_POS_OFFSET = 0;
                 this.TRIANGLE_VERTICES_DATA_UV_OFFSET = 3;
                 this.FOV_LANDSCAPE = 25.0; // FOV for landscape
                 this.FOV_PORTRAIT = 40.0; // FOV for portrait
-                this.YAW_COEFF_NORMAL = 50.0; // camera rotation speed
+                this.YAW_COEFF_NORMAL = 80.0; // camera rotation speed
+
+                this.SCENE_SIZE = { x: 350, y: 350, z: 200 };
+                this.DUST_SPEED = 350000 * 60;
+                this.DUST_FLICKER_SPEED = 10000;
+                this.DUST_COUNT = 8;
+                this.DUST_OFFSET_Z = 200;
+                this.DUST_COLOR = { r: 20 / 256, g: 18 / 256, b: 15 / 256, a: 1 };
+                this.DUST_SPRITE_SIZE = 0.18;
+                this.DUST_SCALE = 0.75;
+
+                this.timerDustRotation = 0;
+                this.timerDustFlicker = 0;
+                this.dustSpriteSize = 0;
+            }
+
+            initVignette() {
+                this.mQuadTriangles = new Float32Array([
+                    // X, Y, Z, U, V
+                    -1.0, -1.0, -5.0, 0.0, 0.0, // 0. left-bottom
+                    1.0, -1.0, -5.0, 1.0, 0.0, // 1. right-bottom
+                    -1.0, 1.0, -5.0, 0.0, 1.0, // 2. left-top
+                    1.0, 1.0, -5.0, 1.0, 1.0, // 3. right-top
+                ]);
+                this.mTriangleVerticesVignette = gl.createBuffer();
+                // console.log(this.mTriangleVerticesVignette);
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.mTriangleVerticesVignette);
+                gl.bufferData(gl.ARRAY_BUFFER, this.mQuadTriangles, gl.STATIC_DRAW);
+                // this.checkGlError("initVignette");
+            }
+
+            resizeCanvas() {
+                super.resizeCanvas();
+
+                this.dustSpriteSize = Math.min(this.canvas.height, this.canvas.width) * this.DUST_SPRITE_SIZE;
             }
 
             /**
@@ -76,6 +112,7 @@ define([
                 this.shaderLMTable = new LMTableShader();
                 this.shaderDiffuse = new DiffuseShader();
                 this.shaderShaft = new LightShaftShader();
+                this.shaderPointSpriteScaledColored = new PointSpriteScaledColoredShader();
             }
 
             /**
@@ -98,6 +135,7 @@ define([
                     $('#divControls').addClass('transparent');
                     setTimeout(() => $('#divControls').hide(), 1000);
                     setTimeout(() => $('.control-icon').removeClass('transparent'), 1200);
+                    setTimeout(() => $('.promo').removeClass('transparent'), 1800);
                 }
             }
 
@@ -105,6 +143,8 @@ define([
              * loads all WebGL buffers and textures. Uses updateLoadedObjectsCount() callback to indicate that data is loaded to GPU
              */
             loadData() {
+                this.initVignette();
+
                 var boundUpdateCallback = this.updateLoadedObjectsCount.bind(this);
 
                 this.textureCoinsNormalMap = UncompressedTextureLoader.load('data/textures/buddha-normals.png', boundUpdateCallback);
@@ -125,6 +165,24 @@ define([
 
                 this.fmShaft = new FullModel();
                 this.fmShaft.load('data/models/shafts', boundUpdateCallback);
+
+                this.fmDustPatch = new FullModel();
+                this.fmDustPatch.load('data/models/particles_20', boundUpdateCallback);
+                this.textureDust = UncompressedTextureLoader.load('data/textures/dust.png', boundUpdateCallback);
+
+                this.fillParticles();
+            }
+
+            fillParticles() {
+                this.dustCoordinates = [];
+
+                for (let i = 0; i < this.DUST_COUNT; i++) {
+                    this.dustCoordinates[i] = {
+                        x: (0.5 - Math.random()) * this.SCENE_SIZE.x,
+                        y: (0.5 - Math.random()) * this.SCENE_SIZE.y,
+                        z: (0.5 - Math.random()) * this.SCENE_SIZE.z + this.DUST_OFFSET_Z
+                    };
+                }
             }
 
             /**
@@ -204,6 +262,44 @@ define([
                 this.drawSky();
                 this.drawTable();
                 this.drawShaft();
+                this.drawDust();
+            }
+
+            drawDust() {
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.ONE, gl.ONE);
+                gl.depthMask(false);
+
+                const cosa = 0.5 + Math.cos(this.timerDustFlicker * Math.PI * 2) * 0.5;
+                const sina = 0.5 + Math.sin(this.timerDustFlicker * Math.PI * 2) * 0.5;
+
+                this.shaderPointSpriteScaledColored.use();
+                this.setTexture2D(0, this.textureDust, this.shaderPointSpriteScaledColored.tex0);
+                gl.uniform1f(this.shaderPointSpriteScaledColored.uThickness, this.dustSpriteSize);
+                gl.uniform4f(this.shaderPointSpriteScaledColored.color, this.DUST_COLOR.r * cosa, this.DUST_COLOR.g * cosa, this.DUST_COLOR.b * cosa, this.DUST_COLOR.a);
+
+                const a = this.timerDustRotation * 360;
+                const b = -this.timerDustRotation * 360;
+
+                for (let i = 0; i < this.dustCoordinates.length; i++) {
+                    if (i < this.dustCoordinates.length / 2) {
+                        this.drawPointSpritesVBOTranslatedRotatedScaled(this.shaderPointSpriteScaledColored, this.fmDustPatch,
+                            this.dustCoordinates[i].x, this.dustCoordinates[i].y, this.dustCoordinates[i].z,
+                            a, b, a,
+                            this.DUST_SCALE, this.DUST_SCALE, this.DUST_SCALE);
+                    } else {
+                        this.drawPointSpritesVBOTranslatedRotatedScaled(this.shaderPointSpriteScaledColored, this.fmDustPatch,
+                            this.dustCoordinates[i].x, this.dustCoordinates[i].y, this.dustCoordinates[i].z,
+                            b, a, b,
+                            this.DUST_SCALE, this.DUST_SCALE, this.DUST_SCALE);
+                    }
+                    if (i == this.dustCoordinates.length / 2) {
+                        gl.uniform4f(this.shaderPointSpriteScaledColored.color, this.DUST_COLOR.r * sina, this.DUST_COLOR.g * sina, this.DUST_COLOR.b * sina, this.DUST_COLOR.a);
+                    }
+                }
+
+                gl.disable(gl.BLEND);
+                gl.depthMask(true);
             }
 
             drawSky() {
@@ -251,6 +347,35 @@ define([
 
                 gl.depthMask(true);
                 gl.disable(gl.BLEND);
+            }
+
+            drawVignette(shader) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.mTriangleVerticesVignette);
+                this.checkGlError("glDrawArrays vignette 0");
+
+                gl.enableVertexAttribArray(shader.rm_Vertex);
+                gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 0);
+                this.checkGlError("glDrawArrays vignette 1");
+                gl.enableVertexAttribArray(shader.rm_TexCoord0);
+                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 4*3);
+                this.checkGlError("glDrawArrays vignette 2");
+
+                gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.mOrthoMatrix);
+                this.checkGlError("glDrawArrays vignette 3");
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                this.checkGlError("glDrawArrays vignette draw");
+            }
+
+            drawPointSpritesVBOTranslatedRotatedScaled(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
+                model.bindBuffers();
+
+                gl.enableVertexAttribArray(shader.aPosition);
+                gl.vertexAttribPointer(shader.aPosition, 3, gl.FLOAT, false, 4 * (3 + 2), 0);
+
+                this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);
+
+                gl.uniformMatrix4fv(shader.uMvp, false, this.mMVPMatrix);
+                gl.drawElements(gl.POINTS, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
             }
 
             drawShaftVBOTranslatedRotatedScaled(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
@@ -337,6 +462,9 @@ define([
 
                     this.angleYaw += elapsed / this.YAW_COEFF_NORMAL;
                     this.angleYaw %= 360.0;
+
+                    this.timerDustRotation = (timeNow % this.DUST_SPEED) / this.DUST_SPEED;
+                    this.timerDustFlicker = (timeNow % this.DUST_FLICKER_SPEED) / this.DUST_FLICKER_SPEED;
                 }
 
                 this.lastTime = timeNow;

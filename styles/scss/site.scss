@@ -11,24 +11,32 @@ body {
 .canvasGL {
     display: block;
     width: 100vw;
-    max-width: 240vh;
+    // max-width: 240vh;
     height: 100vh;
     border: none;
     padding: 0;
     margin: 0 auto;
-    // box-shadow: inset 0px 0px 60px 10px rgba(0,0,0,0.75);
-
-    // .fs & {
-    //     position: absolute;
-    //     top: 0;
-    //     left: 0;
-    //     width: 100vw;
-    //     height: 100vh;
-    // }
 }
 
 .transparent {
     opacity: 0 !important;
+}
+
+.promo {
+    opacity: 1;
+    position: absolute;
+    bottom: 5vh;
+    width: 100%;
+    text-align: center;
+    transition: opacity 900ms cubic-bezier(0.645, 0.045, 0.355, 1);
+
+    img {
+        width: 250px;
+    }
+
+    .text {
+        color: #fff;
+    }
 }
 
 .controls {
