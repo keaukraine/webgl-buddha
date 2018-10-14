@@ -1,12 +1,12 @@
-# 3D Buddha WebGL demo
+# 3D Buddha WebGL Demo
 
-This demo is a WebGL port of Android live wallpaper *[Bitcoins 3D Live Wallpaper](https://play.google.com/store/apps/details?id=org.androidworks.livewallpaperbitcoins)*.
+This demo is a WebGL port of Android live wallpaper *[3D Buddha Live Wallpaper](https://play.google.com/store/apps/details?id=org.androidworks.livewallpaperbuddha)*.
 
-Live demo page is available here: https://keaukraine.github.io/webgl-bitcoin/
+Live demo page is available here: https://keaukraine.github.io/webgl-buddha/index.html
 
 Works in latest Chrome, Firefox, Safari and Edge.
 
-#Used Libraries
+# Used Libraries
 
 * Twitter Bootstrap used under the MIT License https://github.com/twbs/bootstrap/blob/master/LICENSE
 * Material Icons by Google used under Apache License https://design.google.com/icons/
@@ -16,11 +16,11 @@ Works in latest Chrome, Firefox, Safari and Edge.
 * WebGL initialization code is based on http://learningwebgl.com/ tutorials
 * Google Play and the Google Play logo are trademarks of Google LLC.
 
-#License
+# License
 
 **The MIT License**
 
-Copyright (c) 2016 Oleksandr Popov, Dmytro Popov
+Copyright (c) 2018 Oleksandr Popov, Dmytro Popov
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

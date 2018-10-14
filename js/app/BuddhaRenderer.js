@@ -351,19 +351,19 @@ define([
 
             drawVignette(shader) {
                 gl.bindBuffer(gl.ARRAY_BUFFER, this.mTriangleVerticesVignette);
-                this.checkGlError("glDrawArrays vignette 0");
+                // this.checkGlError("glDrawArrays vignette 0");
 
                 gl.enableVertexAttribArray(shader.rm_Vertex);
                 gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 0);
-                this.checkGlError("glDrawArrays vignette 1");
+                // this.checkGlError("glDrawArrays vignette 1");
                 gl.enableVertexAttribArray(shader.rm_TexCoord0);
                 gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 4*3);
-                this.checkGlError("glDrawArrays vignette 2");
+                // this.checkGlError("glDrawArrays vignette 2");
 
                 gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.mOrthoMatrix);
-                this.checkGlError("glDrawArrays vignette 3");
+                // this.checkGlError("glDrawArrays vignette 3");
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-                this.checkGlError("glDrawArrays vignette draw");
+                // this.checkGlError("glDrawArrays vignette draw");
             }
 
             drawPointSpritesVBOTranslatedRotatedScaled(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
