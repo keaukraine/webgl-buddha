@@ -137,7 +137,7 @@ define([
             var gl = null;
 
             try {
-                gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                gl = canvas.getContext('webgl', { alpha: false }) || canvas.getContext('experimental-webgl', { alpha: false });
                 gl.viewportWidth = canvas.width;
                 gl.viewportHeight = canvas.height;
                 this.isETC1Supported = !!gl.getExtension('WEBGL_compressed_texture_etc1');
