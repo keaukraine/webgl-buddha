@@ -2,7 +2,6 @@
 
 define([
     'framework/BaseRenderer',
-    'jquery',
     'DiffuseShader',
     'LightShaftShader',
     'SphericalMapLMShader',
@@ -15,7 +14,6 @@ define([
 ],
     function (
         BaseRenderer,
-        $,
         DiffuseShader,
         LightShaftShader,
         SphericalMapLMShader,
@@ -30,17 +28,11 @@ define([
             constructor() {
                 super();
 
-                this.loadedItemsCount = 0; // couter of loaded OpenGL buffers+textures
+                this.loadedItemsCount = 0; // counter of loaded OpenGL buffers+textures
                 this.loaded = false; // won't draw until this is true
 
                 this.angleYaw = 0; // camera rotation angle
                 this.lastTime = 0; // used for animating camera
-
-                this.coinModelType = '1'; // coin mesh: 1, 2, 3, 4
-                this.coinNormalType = '1'; // coin normal texture: 1, 2, 3
-                this.coinSphericalMap = 'gold2'; // coin spherical map texture: 'bronze', 'gold2', 'silver'
-                this.tableTextureType = 'marble'; // floor texture: 'granite', 'marble', 'wood3'
-                this.skyTextureType = 'sky3';
 
                 this.ITEMS_TO_LOAD = 13; // total number of OpenGL buffers+textures to load
                 this.FLOAT_SIZE_BYTES = 4; // float size, used to calculate stride sizes
@@ -74,10 +66,8 @@ define([
                     1.0, 1.0, -5.0, 1.0, 1.0, // 3. right-top
                 ]);
                 this.mTriangleVerticesVignette = gl.createBuffer();
-                // console.log(this.mTriangleVerticesVignette);
                 gl.bindBuffer(gl.ARRAY_BUFFER, this.mTriangleVerticesVignette);
                 gl.bufferData(gl.ARRAY_BUFFER, this.mQuadTriangles, gl.STATIC_DRAW);
-                // this.checkGlError("initVignette");
             }
 
             resizeCanvas() {
@@ -97,14 +87,14 @@ define([
             onBeforeInit() {
                 super.onBeforeInit();
 
-                $('#canvasGL').show();
+                document.getElementById('canvasGL').classList.remove('hidden');
             }
 
             onInitError() {
                 super.onInitError();
 
                 $(canvas).hide();
-                $('#alertError').show();
+                document.getElementById('alertError').classList.remove('hidden');
             }
 
             initShaders() {
@@ -120,22 +110,21 @@ define([
              */
             updateLoadedObjectsCount() {
                 var percent,
-                    $progress = $('#progressLoading');
+                    progressElement = document.getElementById('progressLoading');
 
                 this.loadedItemsCount++; // increase loaded objects counter
 
                 percent = Math.floor(this.loadedItemsCount * 100 / this.ITEMS_TO_LOAD) + '%';
-                $progress
-                    .css('width', percent)
-                    .html(percent); // update loading progress
+                progressElement.innerHTML = percent;
+                progressElement.style.width = percent;
 
                 if (this.loadedItemsCount >= this.ITEMS_TO_LOAD) {
                     this.loaded = true; // allow rendering
                     console.log('Loaded all assets');
-                    $('#divControls').addClass('transparent');
-                    setTimeout(() => $('#divControls').hide(), 1000);
-                    setTimeout(() => $('.control-icon').removeClass('transparent'), 1200);
-                    setTimeout(() => $('.promo').removeClass('transparent'), 1800);
+                    document.getElementById('divControls').classList.add('transparent');
+                    setTimeout(() => document.getElementById('divControls').classList.add('hidden'), 1000);
+                    setTimeout(() => document.querySelector('.control-icon').classList.remove('transparent'), 1200);
+                    setTimeout(() => document.querySelector('.promo').classList.remove('transparent'), 1800);
                 }
             }
 
@@ -341,8 +330,6 @@ define([
                 this.shaderShaft.use();
 
                 this.setTexture2D(0, this.textureShaft, this.shaderShaft.diffuseMap);
-                //this.setTexture2D(1, this.textureShaft, this.shaderShaft.sphereMap);
-                //this.setTexture2D(2, this.textureShaft, this.shaderShaft.aoMap);
                 this.drawShaftVBOTranslatedRotatedScaled(this.shaderShaft, this.fmShaft, 0, 0, 0, 0, 0, 0, 1, 1, 1);
 
                 gl.depthMask(true);
@@ -351,19 +338,14 @@ define([
 
             drawVignette(shader) {
                 gl.bindBuffer(gl.ARRAY_BUFFER, this.mTriangleVerticesVignette);
-                // this.checkGlError("glDrawArrays vignette 0");
 
                 gl.enableVertexAttribArray(shader.rm_Vertex);
                 gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 0);
-                // this.checkGlError("glDrawArrays vignette 1");
                 gl.enableVertexAttribArray(shader.rm_TexCoord0);
                 gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 4*3);
-                // this.checkGlError("glDrawArrays vignette 2");
 
                 gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.mOrthoMatrix);
-                // this.checkGlError("glDrawArrays vignette 3");
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-                // this.checkGlError("glDrawArrays vignette draw");
             }
 
             drawPointSpritesVBOTranslatedRotatedScaled(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
@@ -383,12 +365,10 @@ define([
 
                 gl.enableVertexAttribArray(shader.rm_Vertex);
                 gl.enableVertexAttribArray(shader.rm_TexCoord0);
-                //gl.enableVertexAttribArray(shader.rm_TexCoord1);
                 gl.enableVertexAttribArray(shader.rm_Normal);
 
                 gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 4 * (3 + 2 + 2 + 3), 0);
                 gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, 4 * (3 + 2 + 2 + 3), 4 * (3));
-                //gl.vertexAttribPointer(shader.rm_TexCoord1, 2, gl.FLOAT, false, 4 * (3 + 2 + 2 + 3), 4 * (3 + 2));
                 gl.vertexAttribPointer(shader.rm_Normal, 3, gl.FLOAT, false, 4 * (3 + 2 + 2 + 3), 4 * (3 + 2 + 2));
 
                 this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);

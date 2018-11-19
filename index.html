@@ -19,8 +19,16 @@
     <script data-main="js/app" src="js/lib/require.js"></script>
 </head>
 
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        background: #000;
+    }
+</style>
+
 <body>
-    <canvas id="canvasGL" class="canvasGL" style="display:none;">
+    <canvas id="canvasGL" class="canvasGL hidden">
         Your browser doesn't appear to support the
         <code>&lt;canvas&gt;</code> element.
     </canvas>
@@ -39,7 +47,7 @@
             </div>
             <div class="row text-center">
                 <div class="col col-sm-8 col-sm-push-2">
-                    <div class="alert alert-danger" role="alert" id="alertError" style="display:none;">
+                    <div class="alert alert-danger hidden" role="alert" id="alertError">
                         Cannot initialize WebGL context.
                     </div>
                 </div>
@@ -50,10 +58,6 @@
         <i class="material-icons md-36 icon-enter-fs" title="Fullscreen Mode">fullscreen</i>
         <i class="material-icons md-36 icon-exit-fs" title="Exit Fullscreen">fullscreen_exit</i>
     </a>
-    <!-- <a href="javascript:void(0)" id="toggleSettings" class="control-icon control-settings" style="display:none;">
-        <i class="material-icons md-36 icon-show-settings" title="Settings">settings</i>
-        <i class="material-icons md-36 icon-hide-settings" title="Close">close</i>
-    </a> -->
     <div id="promo" class="promo transparent">
         <h3 class="text">3D Buddha Live Wallpaper</h3>
         <a href='https://play.google.com/store/apps/details?id=org.androidworks.livewallpaperbuddha&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img
