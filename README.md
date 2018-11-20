@@ -11,7 +11,6 @@ Works in latest Chrome, Firefox, Safari and Edge.
 * Twitter Bootstrap used under the MIT License https://github.com/twbs/bootstrap/blob/master/LICENSE
 * Material Icons by Google used under Apache License https://design.google.com/icons/
 * RequireJS, Released under the  MIT license https://github.com/requirejs/requirejs/blob/master/LICENSE
-* jQuery used under the MIT license https://jquery.org/license/
 * gl-matrix, a high performance matrix and vector operations by Brandon Jones and Colin MacKenzie IV
 * WebGL initialization code is based on http://learningwebgl.com/ tutorials
 * Google Play and the Google Play logo are trademarks of Google LLC.

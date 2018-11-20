@@ -1,29 +1,19 @@
 'use strict';
 
 define([
-        'BuddhaRenderer',
-        'jquery',
-        'framework/utils/FullscreenUtils'
-    ],
-    function(
+    'BuddhaRenderer',
+    'framework/utils/FullscreenUtils'
+],
+    function (
         BuddhaRenderer,
-        $,
         FullScreenUtils) {
 
         var renderer;
-        var config = {
-            'model': 'buddha', // 1, 2, 3, 4
-            'normal': '1', // 1, 2, 3
-            'spherical': 'gold2', // 'bronze', 'gold2', 'silver'
-            'table': 'marble' // 'granite', 'marble', 'wood3'
-        };
 
         /**
          * Initialize renderer with current scene configuration
          */
         function initRenderer() {
-            var oldYaw = 0;
-
             window.gl = null;
 
             if (renderer) {
@@ -33,64 +23,38 @@ define([
 
             renderer = new BuddhaRenderer();
 
-            renderer.coinModelType = config['model'];
-            renderer.coinNormalType = config['normal'];
-            renderer.coinSphericalMap = config['spherical'];
-            renderer.tableTextureType = config['table'];
-
             renderer.init('canvasGL');
-            renderer.angleYaw = oldYaw;
+            renderer.angleYaw = 30;
         }
 
-        $(function() {
+        function loadedHandler() {
             initRenderer();
 
-            // initialize fullscreen if supported
             if (FullScreenUtils.isFullScreenSupported()) {
-                $('#toggleFullscreen').on('click', function(e) {
-                    var $body = $('body');
+                const toggleFullscreenElement = document.getElementById('toggleFullscreen');
 
-                    if ($body.hasClass('fs')) {
+                toggleFullscreenElement.addEventListener('click', () => {
+                    if (document.body.classList.contains('fs')) {
                         FullScreenUtils.exitFullScreen();
                     } else {
                         FullScreenUtils.enterFullScreen();
                     }
-                    FullScreenUtils.addFullScreenListener(function() {
+                    FullScreenUtils.addFullScreenListener(function () {
                         if (FullScreenUtils.isFullScreen()) {
-                            $body.addClass('fs');
+                            document.body.classList.add('fs');
                         } else {
-                            $body.removeClass('fs');
+                            document.body.classList.remove('fs');
                         }
                     });
                 });
             } else {
-                $('#toggleFullscreen').addClass('hidden');
+                toggleFullscreenElement.classList.add('hidden');
             }
+        }
 
-            // toggle settings visibility
-            $('#toggleSettings').on('click', function(e) {
-                var $this = $(this),
-                    $controls = $('#row-settings');
-
-                $this.toggleClass('open');
-                $controls.toggle();
-            });
-
-            // update scene configuration and re-init renderer
-            $('#row-settings .btn').on('click', function() {
-                var $this = $(this),
-                    option = $this.data('option'),
-                    value = $this.data('value');
-
-                $this
-                    .siblings()
-                    .removeClass('active')
-                    .end()
-                    .addClass('active');
-
-                config[option] = value;
-
-                initRenderer();
-            });
-        });
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadedHandler);
+        } else {
+            loadedHandler();
+        }
     });
