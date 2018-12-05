@@ -136,7 +136,7 @@ define([
 
                 var boundUpdateCallback = this.updateLoadedObjectsCount.bind(this);
 
-                this.textureCoinsNormalMap = UncompressedTextureLoader.load('data/textures/buddha-normals.png', boundUpdateCallback);
+                this.textureBuddhaNormalMap = UncompressedTextureLoader.load('data/textures/buddha-normals.png', boundUpdateCallback);
                 this.textureSphericalMap = UncompressedTextureLoader.load('data/textures/sphere_gold3.png', boundUpdateCallback);
                 this.textureBuddhaLightMap = UncompressedTextureLoader.load('data/textures/buddha_lm.png', boundUpdateCallback);
                 this.textureTable = this.loadETC1WithFallback('data/textures/table/marble');
@@ -146,8 +146,8 @@ define([
 
                 this.modelTable = new FullModel();
                 this.modelTable.load('data/models/table', boundUpdateCallback);
-                this.modelCoins = new FullModel();
-                this.modelCoins.load('data/models/buddha', boundUpdateCallback);
+                this.modelBuddha = new FullModel();
+                this.modelBuddha.load('data/models/buddha', boundUpdateCallback);
 
                 this.fmSky = new FullModel();
                 this.fmSky.load('data/models/sky', boundUpdateCallback);
@@ -247,7 +247,7 @@ define([
                 this.positionCamera(0.0);
                 this.setCameraFOV(1.0);
 
-                this.drawCoins();
+                this.drawBuddha();
                 this.drawSky();
                 this.drawTable();
                 this.drawShaft();
@@ -313,13 +313,13 @@ define([
                 gl.disable(gl.BLEND);
             }
 
-            drawCoins() {
+            drawBuddha() {
                 this.shaderSphericalMapLM.use();
 
-                this.setTexture2D(0, this.textureCoinsNormalMap, this.shaderSphericalMapLM.normalMap);
+                this.setTexture2D(0, this.textureBuddhaNormalMap, this.shaderSphericalMapLM.normalMap);
                 this.setTexture2D(1, this.textureSphericalMap, this.shaderSphericalMapLM.sphereMap);
                 this.setTexture2D(2, this.textureBuddhaLightMap, this.shaderSphericalMapLM.aoMap);
-                this.drawCoinVBOTranslatedRotatedScaled(this.shaderSphericalMapLM, this.modelCoins, 0, 0, 0, 0, 0, 0, 1, 1, 1);
+                this.drawSphericalMapLmVBOTranslatedRotatedScaled(this.shaderSphericalMapLM, this.modelBuddha, 0, 0, 0, 0, 0, 0, 1, 1, 1);
             }
 
             drawShaft() {
@@ -378,7 +378,7 @@ define([
                 gl.drawElements(gl.TRIANGLES, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
             }
 
-            drawCoinVBOTranslatedRotatedScaled(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
+            drawSphericalMapLmVBOTranslatedRotatedScaled(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
                 model.bindBuffers();
 
                 gl.enableVertexAttribArray(shader.rm_Vertex);
