@@ -88,6 +88,10 @@ body {
         right: 30px;
         top: 30px;
 
+        @media (display-mode: fullscreen) {
+            display: none !important;
+        }
+
         .icon-enter-fs {
             display: inline-block;
         }
