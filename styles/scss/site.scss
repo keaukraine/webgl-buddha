@@ -28,14 +28,15 @@ body {
     bottom: 5vh;
     width: 100%;
     text-align: center;
-    transition: opacity 900ms cubic-bezier(0.645, 0.045, 0.355, 1);
+    transition: opacity 1000ms cubic-bezier(0.645, 0.045, 0.355, 1);
 
     img {
-        width: 250px;
+        width: 220px;
     }
 
     .text {
         color: #fff;
+        text-shadow: #030303 0px 0px 5px;
     }
 }
 

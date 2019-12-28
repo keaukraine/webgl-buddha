@@ -10,7 +10,10 @@ define([
     'framework/utils/MatrixUtils',
     'framework/FullModel',
     'framework/UncompressedTextureLoader',
-    'framework/CompressedTextureLoader'
+    'framework/CompressedTextureLoader',
+    'framework/FrameBuffer',
+    'framework/TextureUtils',
+    'SoftDiffuseColoredShader'
 ],
     function (
         BaseRenderer,
@@ -22,8 +25,11 @@ define([
         MatrixUtils,
         FullModel,
         UncompressedTextureLoader,
-        CompressedTextureLoader) {
-
+        CompressedTextureLoader,
+        FrameBuffer,
+        TextureUtils,
+        SoftDiffuseColoredShader
+    ) {
         class BuddhaRenderer extends BaseRenderer {
             constructor() {
                 super();
@@ -34,7 +40,7 @@ define([
                 this.angleYaw = 0; // camera rotation angle
                 this.lastTime = 0; // used for animating camera
 
-                this.ITEMS_TO_LOAD = 13; // total number of OpenGL buffers+textures to load
+                this.ITEMS_TO_LOAD = 15; // total number of OpenGL buffers+textures to load
                 this.FLOAT_SIZE_BYTES = 4; // float size, used to calculate stride sizes
                 this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 5 * this.FLOAT_SIZE_BYTES;
                 this.TRIANGLE_VERTICES_DATA_POS_OFFSET = 0;
@@ -49,12 +55,18 @@ define([
                 this.DUST_COUNT = 8;
                 this.DUST_OFFSET_Z = 200;
                 this.DUST_COLOR = { r: 20 / 256, g: 18 / 256, b: 15 / 256, a: 1 };
-                this.DUST_SPRITE_SIZE = 0.18;
+                this.DUST_SPRITE_SIZE = 0.015;
                 this.DUST_SCALE = 0.75;
 
                 this.timerDustRotation = 0;
                 this.timerDustFlicker = 0;
                 this.dustSpriteSize = 0;
+
+                this.Z_NEAR = 200;
+                this.Z_FAR = 2000;
+
+                this.mOrthoMatrix = new Array(16);
+                MatrixUtils.mat4.ortho(this.mOrthoMatrix, -1, 1, -1, 1, 2.0, 250);
             }
 
             initVignette() {
@@ -103,6 +115,7 @@ define([
                 this.shaderDiffuse = new DiffuseShader();
                 this.shaderShaft = new LightShaftShader();
                 this.shaderPointSpriteScaledColored = new PointSpriteScaledColoredShader();
+                this.shaderSoftDiffuseColored = new SoftDiffuseColoredShader();
             }
 
             /**
@@ -143,6 +156,7 @@ define([
                 this.textureTableLM = UncompressedTextureLoader.load('data/textures/table/table_lm.png', boundUpdateCallback);
                 this.textureSky = UncompressedTextureLoader.load('data/textures/sky/sky1.png', boundUpdateCallback);
                 this.textureShaft = UncompressedTextureLoader.load('data/textures/shafts.png', boundUpdateCallback);
+                this.textureSmoke = UncompressedTextureLoader.load('data/textures/smoke.png', boundUpdateCallback);
 
                 this.modelTable = new FullModel();
                 this.modelTable.load('data/models/table', boundUpdateCallback);
@@ -159,7 +173,12 @@ define([
                 this.fmDustPatch.load('data/models/particles_20', boundUpdateCallback);
                 this.textureDust = UncompressedTextureLoader.load('data/textures/dust.png', boundUpdateCallback);
 
+                this.fmQuad = new FullModel();
+                this.fmQuad.load('data/models/smoke100', boundUpdateCallback);
+
                 this.fillParticles();
+
+                this.initOffscreen();
             }
 
             fillParticles() {
@@ -172,6 +191,23 @@ define([
                         z: (0.5 - Math.random()) * this.SCENE_SIZE.z + this.DUST_OFFSET_Z
                     };
                 }
+            }
+
+            initOffscreen() {
+                const ext = gl.getExtension('WEBGL_depth_texture');
+                console.log(ext);
+
+                this.textureOffscreenColorID = TextureUtils.createNPOTTexture(this.canvas.width, this.canvas.height, false);
+                this.checkGlError("color");
+                this.textureOffscreenDepthID = TextureUtils.createDepthTexture(this.canvas.width, this.canvas.height);
+                this.checkGlError("depth");
+                this.fboOffscreen = new FrameBuffer();
+                this.fboOffscreen.textureHandle = this.textureOffscreenColorID;
+                this.fboOffscreen.depthTextureHandle = this.textureOffscreenDepthID;
+                this.fboOffscreen.width = this.canvas.width;
+                this.fboOffscreen.height = this.canvas.height;
+                this.fboOffscreen.createGLData();
+                this.checkGlError("offscreen FBO");
             }
 
             /**
@@ -222,9 +258,9 @@ define([
                 }
 
                 if (gl.canvas.width >= gl.canvas.height) {
-                    this.setFOV(this.mProjMatrix, this.FOV_LANDSCAPE * multiplier, ratio, 20.0, 11000.0);
+                    this.setFOV(this.mProjMatrix, this.FOV_LANDSCAPE * multiplier, ratio, this.Z_NEAR, this.Z_FAR);
                 } else {
-                    this.setFOV(this.mProjMatrix, this.FOV_PORTRAIT * multiplier, ratio, 20.0, 11000.0);
+                    this.setFOV(this.mProjMatrix, this.FOV_PORTRAIT * multiplier, ratio, this.Z_NEAR, this.Z_FAR);
                 }
             }
 
@@ -236,9 +272,19 @@ define([
                     return;
                 }
 
-                gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
                 gl.clearColor(0.0, 1.0, 0.0, 1.0);
-                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                if (true) { // TODO
+                    gl.colorMask(false, false, false, false);
+                    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboOffscreen.framebufferHandle);
+                    gl.viewport(0, 0, this.fboOffscreen.width, this.fboOffscreen.height);
+
+                    gl.depthMask(true);
+                    gl.enable(gl.DEPTH_TEST);
+                    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                    this.drawDepthObjects();
+                }
 
                 gl.enable(gl.DEPTH_TEST);
                 gl.enable(gl.CULL_FACE);
@@ -247,11 +293,41 @@ define([
                 this.positionCamera(0.0);
                 this.setCameraFOV(1.0);
 
+                gl.colorMask(true, true, true, true);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null); // This differs from OpenGL ES
+                gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+                this.drawSceneObjects();
+                this.drawTest();
+            }
+
+            drawSceneObjects() {
                 this.drawBuddha();
                 this.drawSky();
                 this.drawTable();
                 this.drawShaft();
                 this.drawDust();
+            }
+
+            drawDepthObjects() {
+                gl.depthMask(true);
+                gl.disable(gl.BLEND);
+                this.drawBuddha();
+                this.drawTable();
+            }
+
+            drawTest() {
+                gl.enable(gl.CULL_FACE);
+                gl.cullFace(gl.BACK);
+                gl.disable(gl.BLEND);
+
+                this.shaderDiffuse.use();
+                // this.setTexture2D(0, this.textureOffscreenColorID, this.shaderDiffuse.sTexture);
+                // this.drawDiffuseVBOVTNTranslatedRotatedScaled(this.shaderDiffuse, this.fmNebula1, 0, 0, 0, 0, 0, 0, 10, 10, 10);
+
+                this.setTexture2D(0, this.textureOffscreenDepthID, this.shaderDiffuse.sTexture);
+                this.drawVignette(this.shaderDiffuse);
             }
 
             drawDust() {
@@ -298,7 +374,7 @@ define([
             }
 
             drawTable() {
-                gl.depthMask(false);
+                // gl.depthMask(false);
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -309,7 +385,7 @@ define([
                 gl.uniform1f(this.shaderLMTable.diffuseScale, 5.0);
                 this.drawLMVBOTranslatedRotatedScaled(this.shaderLMTable, this.modelTable, 0, 0, 0, 0, 0, 0, 1, 1, 1);
 
-                gl.depthMask(true);
+                // gl.depthMask(true);
                 gl.disable(gl.BLEND);
             }
 
@@ -342,7 +418,7 @@ define([
                 gl.enableVertexAttribArray(shader.rm_Vertex);
                 gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 0);
                 gl.enableVertexAttribArray(shader.rm_TexCoord0);
-                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 4*3);
+                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, this.TRIANGLE_VERTICES_DATA_STRIDE_BYTES, 4 * 3);
 
                 gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.mOrthoMatrix);
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

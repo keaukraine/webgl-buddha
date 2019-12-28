@@ -91,6 +91,11 @@ define([
         BaseRenderer.prototype.onBeforeInit = function() {}
 
         /**
+         * Called right after WebGL initialization
+         */
+        BaseRenderer.prototype.onAfterInit = function() {}
+
+        /**
          * Called on WebGL initialization error
          */
         BaseRenderer.prototype.onInitError = function() {}
@@ -141,7 +146,7 @@ define([
                 gl.viewportWidth = canvas.width;
                 gl.viewportHeight = canvas.height;
                 this.isETC1Supported = !!gl.getExtension('WEBGL_compressed_texture_etc1');
-            } catch (e) {}
+            } catch (e) { }
             if (!gl) {
                 console.warn('Could not initialise WebGL');
             }
@@ -150,16 +155,38 @@ define([
         };
 
         /**
+         * Initializes WebGL 2 context
+         * @param {HTMLElement} canvas - canvas to initialize WebGL
+         */
+        BaseRenderer.prototype.initGL2 = function (canvas) {
+            var gl = null;
+
+            try {
+                gl = canvas.getContext('webgl2', { alpha: false });
+            } catch (e) { }
+            this.isWebGL2 = !!gl;
+
+            if (!this.isWebGL2) {
+                console.warn('Could not initialise WebGL 2, falling back to WebGL 1');
+                return this.initGL(canvas);
+            } else {
+                return gl;
+            }
+        };
+
+        /**
          * Initializes WebGL and calls all callbacks. Assigns current WebGL context to global window.gl
          * @param {String} canvasID - ID of canvas element to initialize WebGL
          */
-        BaseRenderer.prototype.init = function(canvasID) {
+        BaseRenderer.prototype.init = function(canvasID, requestWebGL2) {
             this.onBeforeInit();
 
             this.canvas = document.getElementById(canvasID);
-            window.gl = this.initGL(this.canvas);
+            window.gl = !!requestWebGL2 ? this.initGL2(this.canvas) : this.initGL(this.canvas);
 
             if (window.gl) {
+                this.resizeCanvas();
+                this.onAfterInit();
                 this.initShaders();
                 this.loadData();
                 this.boundTick();
@@ -179,6 +206,14 @@ define([
             if (this.canvas.width != displayWidth || this.canvas.height != displayHeight) {
                 this.canvas.width = displayWidth;
                 this.canvas.height = displayHeight;
+            }
+        }
+
+        BaseRenderer.prototype.checkGlError = function(op) {
+            let error;
+
+            while ((error = gl.getError()) !== gl.NO_ERROR) {
+                console.error(`${op}: glError ${error}`);
             }
         }
 
