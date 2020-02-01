@@ -60,10 +60,38 @@ define([
 
                 this.timerDustRotation = 0;
                 this.timerDustFlicker = 0;
+                this.timerSmokeRotation = 0;
                 this.dustSpriteSize = 0;
 
-                this.Z_NEAR = 200;
+                this.Z_NEAR = 100;
                 this.Z_FAR = 2000;
+                this.SMOKE_SOFTNESS = 0.08;
+                this.m_smokeCoordinates = [
+                    [-219.188324, -77.765877, -32.000130],
+                    [-164.917282, -155.531754, -3.268164],
+                    [-74.093452, -109.379417, -100.979820],
+                    [-54.972435, -218.313690, -125.006828],
+                    [68.940094, -109.379417, -57.751869],
+                    [54.972427, -218.313690, -46.009144],
+                    [209.912292, -77.765877, -144.106689],
+                    [164.917282, -155.531754, 37.452091],
+                    [-237.278671, -0.000009, 63.925690],
+                    [224.910599, -0.000009, 69.076576],
+                    [-219.188324, 77.765869, -143.545853],
+                    [-74.093452, 107.153793, -18.438652],
+                    [68.940109, 107.153816, 9.984768],
+                    [209.912292, 77.765869, -87.094765],
+                    [-164.917297, 155.531754, -42.647652],
+                    [-54.972443, 214.752686, 36.233562],
+                    [54.972427, 214.752686, 29.778637],
+                    [164.917282, 155.531754, -194.976959],
+                ];
+                this.SMOKE_COLOR = {
+                    r: 75 / 255,
+                    g: 76 / 255,
+                    b: 92 / 255
+                };
+                this.SMOKE_SPEED = 90333;
 
                 this.mOrthoMatrix = new Array(16);
                 MatrixUtils.mat4.ortho(this.mOrthoMatrix, -1, 1, -1, 1, 2.0, 250);
@@ -274,17 +302,13 @@ define([
 
                 gl.clearColor(0.0, 1.0, 0.0, 1.0);
 
-                if (true) { // TODO
-                    gl.colorMask(false, false, false, false);
-                    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboOffscreen.framebufferHandle);
-                    gl.viewport(0, 0, this.fboOffscreen.width, this.fboOffscreen.height);
-
-                    gl.depthMask(true);
-                    gl.enable(gl.DEPTH_TEST);
-                    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-                    this.drawDepthObjects();
-                }
+                gl.colorMask(false, false, false, false);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboOffscreen.framebufferHandle);
+                gl.viewport(0, 0, this.fboOffscreen.width, this.fboOffscreen.height);
+                gl.depthMask(true);
+                gl.enable(gl.DEPTH_TEST);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                this.drawDepthObjects();
 
                 gl.enable(gl.DEPTH_TEST);
                 gl.enable(gl.CULL_FACE);
@@ -299,7 +323,7 @@ define([
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
                 this.drawSceneObjects();
-                this.drawTest();
+                // this.drawTestDepth();
             }
 
             drawSceneObjects() {
@@ -308,6 +332,7 @@ define([
                 this.drawTable();
                 this.drawShaft();
                 this.drawDust();
+                this.drawSmoke();
             }
 
             drawDepthObjects() {
@@ -317,17 +342,110 @@ define([
                 this.drawTable();
             }
 
-            drawTest() {
+            drawTestDepth() {
                 gl.enable(gl.CULL_FACE);
                 gl.cullFace(gl.BACK);
                 gl.disable(gl.BLEND);
 
                 this.shaderDiffuse.use();
-                // this.setTexture2D(0, this.textureOffscreenColorID, this.shaderDiffuse.sTexture);
-                // this.drawDiffuseVBOVTNTranslatedRotatedScaled(this.shaderDiffuse, this.fmNebula1, 0, 0, 0, 0, 0, 0, 10, 10, 10);
 
                 this.setTexture2D(0, this.textureOffscreenDepthID, this.shaderDiffuse.sTexture);
                 this.drawVignette(this.shaderDiffuse);
+            }
+
+            drawSmoke() {
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.ONE, gl.ONE);
+                gl.depthMask(false);
+
+                const cosa = Math.cos(this.timerSmokeRotation * Math.PI * 2);
+                const sina = Math.sin(this.timerSmokeRotation * Math.PI * 2);
+
+                this.shaderSoftDiffuseColored.use();
+                this.initDepthReadShader(this.shaderSoftDiffuseColored);
+                this.setTexture2D(0, this.textureSmoke, this.shaderSoftDiffuseColored.sTexture);
+                gl.uniform4f(
+                    this.shaderSoftDiffuseColored.color,
+                    this.SMOKE_COLOR.r, this.SMOKE_COLOR.g, this.SMOKE_COLOR.b, 1
+                );
+
+                for (let i = 0; i < this.m_smokeCoordinates.length; i++) {
+                    const x = this.m_smokeCoordinates[i][0] * 1.5;
+                    const y = this.m_smokeCoordinates[i][1] * 1.5;
+                    const z = this.m_smokeCoordinates[i][2] * 0.2 + 20;
+
+                    this.drawDiffuseVBOFacingCamera(
+                        this.shaderSoftDiffuseColored,
+                        this.fmQuad,
+                        (x * cosa - y * sina),
+                        (x * sina + y * cosa),
+                        z,
+                        2.3, 2.3, 2.3
+                    );
+                }
+
+                gl.disable(gl.BLEND);
+                gl.depthMask(true);
+            }
+
+            initDepthReadShader(shader) {
+                gl.uniform2f(shader.cameraRange, this.Z_NEAR, this.Z_FAR); // near and far clipping planes
+                gl.uniform2f(shader.invViewportSize, 1.0 / this.canvas.width, 1.0 / this.canvas.height); // inverted screen size
+                gl.uniform1f(shader.transitionSize, this.SMOKE_SOFTNESS);
+                this.setTexture2D(2, this.textureOffscreenDepthID, shader.sDepth);
+            }
+
+            drawDiffuseVBOFacingCamera(shader, model, tx, ty, tz, sx, sy, sz) {
+                model.bindBuffers();
+
+                gl.enableVertexAttribArray(shader.rm_Vertex);
+                gl.enableVertexAttribArray(shader.rm_TexCoord0);
+                gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 4 * (3 + 2), 0);
+                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, 4 * (3 + 2), 4 * 3);
+
+                this.calculateMVPMatrixForSprite(tx, ty, tz, sx, sy, sz);
+
+                gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.mMVPMatrix);
+                gl.drawElements(gl.TRIANGLES, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
+                this.checkGlError("glDrawElements");
+            }
+
+            calculateMVPMatrixForSprite(tx, ty, tz, sx, sy, sz) {
+                MatrixUtils.mat4.identity(this.mMMatrix);
+                // MatrixUtils.mat4.rotate(this.mMMatrix, this.mMMatrix, 0, [1, 0, 0]);
+                MatrixUtils.mat4.translate(this.mMMatrix, this.mMMatrix, [tx, ty, tz]);
+                MatrixUtils.mat4.scale(this.mMMatrix, this.mMMatrix, [sx, sy, sz]);
+                MatrixUtils.mat4.multiply(this.mMVPMatrix, this.mVMatrix, this.mMMatrix);
+                this.resetMatrixRotations(this.mMVPMatrix);
+                MatrixUtils.mat4.multiply(this.mMVPMatrix, this.mProjMatrix, this.mMVPMatrix);
+
+                // Matrix.setIdentityM(mMMatrix, 0);
+                // Matrix.translateM(mMMatrix, 0, tx, ty, tz);
+                // Matrix.scaleM(mMMatrix, 0, sx, sy, sz);
+                // Matrix.multiplyMM(mMVPMatrix, 0, mVMatrix, 0, mMMatrix, 0);
+                // resetMatrixRotations(mMVPMatrix);
+                // Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mMVPMatrix, 0);
+            }
+
+            resetMatrixRotations(matrix) {
+                const d = Math.sqrt(matrix[0] * matrix[0] + matrix[1] * matrix[1] + matrix[2] * matrix[2]);
+                matrix[0] = d;
+                matrix[4] = 0;
+                matrix[8] = 0;
+
+                matrix[1] = 0;
+                matrix[5] = d;
+                matrix[9] = 0;
+
+                matrix[2] = 0;
+                matrix[6] = 0;
+                matrix[10] = d;
+
+                matrix[3] = 0;
+                matrix[7] = 0;
+                matrix[11] = 0;
+
+                matrix[15] = 1;
             }
 
             drawDust() {
@@ -521,6 +639,7 @@ define([
 
                     this.timerDustRotation = (timeNow % this.DUST_SPEED) / this.DUST_SPEED;
                     this.timerDustFlicker = (timeNow % this.DUST_FLICKER_SPEED) / this.DUST_FLICKER_SPEED;
+                    this.timerSmokeRotation = (timeNow % this.SMOKE_SPEED) / this.SMOKE_SPEED;
                 }
 
                 this.lastTime = timeNow;
