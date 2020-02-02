@@ -87,9 +87,9 @@ define([
                     [164.917282, 155.531754, -194.976959],
                 ];
                 this.SMOKE_COLOR = {
-                    r: 75 / 255,
-                    g: 76 / 255,
-                    b: 92 / 255
+                    r: 85 / 255,
+                    g: 86 / 255,
+                    b: 102 / 255
                 };
                 this.SMOKE_SPEED = 90333;
 
@@ -329,7 +329,7 @@ define([
             drawSceneObjects() {
                 this.drawBuddha();
                 this.drawSky();
-                this.drawTable();
+                this.drawTable(1.0);
                 this.drawShaft();
                 this.drawDust();
                 this.drawSmoke();
@@ -339,7 +339,7 @@ define([
                 gl.depthMask(true);
                 gl.disable(gl.BLEND);
                 this.drawBuddha();
-                this.drawTable();
+                this.drawTable(2.0);
             }
 
             drawTestDepth() {
@@ -491,7 +491,7 @@ define([
                 this.drawDiffuseVBOTranslatedRotatedScaled(this.shaderDiffuse, this.fmSky, 0, 0, 0, 0, 0, 0, 7, 7, 3.5);
             }
 
-            drawTable() {
+            drawTable(scale) {
                 // gl.depthMask(false);
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -501,7 +501,7 @@ define([
                 this.setTexture2D(0, this.textureTable, this.shaderLMTable.sTexture);
                 this.setTexture2D(1, this.textureTableLM, this.shaderLMTable.sLM);
                 gl.uniform1f(this.shaderLMTable.diffuseScale, 5.0);
-                this.drawLMVBOTranslatedRotatedScaled(this.shaderLMTable, this.modelTable, 0, 0, 0, 0, 0, 0, 1, 1, 1);
+                this.drawLMVBOTranslatedRotatedScaled(this.shaderLMTable, this.modelTable, 0, 0, 0, 0, 0, 0, scale, scale, 1);
 
                 // gl.depthMask(true);
                 gl.disable(gl.BLEND);
