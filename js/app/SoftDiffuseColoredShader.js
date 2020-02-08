@@ -33,15 +33,16 @@ define(['framework/BaseShader'], function (BaseShader) {
                 "uniform vec4 color;\n" +
                 "\n" +
                 "void main() {\n" +
-                "   vec4 diffuse = texture2D(sTexture, vTextureCoord) * color;\n" +
-                            //    "   diffuse += vec4(0.0, 0.0, 1.0, 1.0);\n"+ // fixme
-                "   vec2 coords = gl_FragCoord.xy * uInvViewportSize;\n" +
-                "   float geometryZ = calc_depth(texture2D(sDepth, coords).r);\n" +
-                "   float sceneZ = calc_depth(gl_FragCoord.z);\n" +
-                "   float a = clamp(geometryZ - sceneZ, 0.0, 1.0);\n" +
-                "   float b = smoothstep(0.0, uTransitionSize, a);\n" +
-                "   gl_FragColor = diffuse * b;\n" +
-                // "   gl_FragColor = vec4(a,a,a,1.0);\n" +
+                "   vec4 diffuse = texture2D(sTexture, vTextureCoord) * color;\n" + // particle base diffuse color
+                // "   diffuse += vec4(0.0, 0.0, 1.0, 1.0);\n"+ // uncomment to visualize particle shape
+                "   vec2 coords = gl_FragCoord.xy * uInvViewportSize;\n" + // calculate depth texture coordinates
+                "   float geometryZ = calc_depth(texture2D(sDepth, coords).r);\n" + // lineriarize particle depth
+                "   float sceneZ = calc_depth(gl_FragCoord.z);\n" + // lineriarize scene depth
+                "   float a = clamp(geometryZ - sceneZ, 0.0, 1.0);\n" + // linear clamped diff between scene and particle depth
+                "   float b = smoothstep(0.0, uTransitionSize, a);\n" + // apply smoothstep to make soft transition
+                "   gl_FragColor = diffuse * b;\n" + // final color with soft edge
+                // "   gl_FragColor = vec4(a, a, a, 1.0);\n" + // uncomment to visualize raw Z difference
+                // "   gl_FragColor = vec4(b, b, b, 1.0);\n" + // uncomment to visualize blending coefficient
                 "}";
         }
 
