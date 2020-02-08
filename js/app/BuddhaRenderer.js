@@ -412,19 +412,11 @@ define([
 
             calculateMVPMatrixForSprite(tx, ty, tz, sx, sy, sz) {
                 MatrixUtils.mat4.identity(this.mMMatrix);
-                // MatrixUtils.mat4.rotate(this.mMMatrix, this.mMMatrix, 0, [1, 0, 0]);
                 MatrixUtils.mat4.translate(this.mMMatrix, this.mMMatrix, [tx, ty, tz]);
                 MatrixUtils.mat4.scale(this.mMMatrix, this.mMMatrix, [sx, sy, sz]);
                 MatrixUtils.mat4.multiply(this.mMVPMatrix, this.mVMatrix, this.mMMatrix);
                 this.resetMatrixRotations(this.mMVPMatrix);
                 MatrixUtils.mat4.multiply(this.mMVPMatrix, this.mProjMatrix, this.mMVPMatrix);
-
-                // Matrix.setIdentityM(mMMatrix, 0);
-                // Matrix.translateM(mMMatrix, 0, tx, ty, tz);
-                // Matrix.scaleM(mMMatrix, 0, sx, sy, sz);
-                // Matrix.multiplyMM(mMVPMatrix, 0, mVMatrix, 0, mMMatrix, 0);
-                // resetMatrixRotations(mMVPMatrix);
-                // Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mMVPMatrix, 0);
             }
 
             resetMatrixRotations(matrix) {
