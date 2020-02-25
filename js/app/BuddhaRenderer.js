@@ -300,6 +300,9 @@ define([
                     return;
                 }
 
+                this.positionCamera(0.0);
+                this.setCameraFOV(1.0);
+
                 gl.clearColor(0.0, 1.0, 0.0, 1.0);
 
                 gl.colorMask(false, false, false, false);
@@ -313,9 +316,6 @@ define([
                 gl.enable(gl.DEPTH_TEST);
                 gl.enable(gl.CULL_FACE);
                 gl.cullFace(gl.BACK);
-
-                this.positionCamera(0.0);
-                this.setCameraFOV(1.0);
 
                 gl.colorMask(true, true, true, true);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null); // This differs from OpenGL ES
