@@ -178,7 +178,8 @@ define([
                 var boundUpdateCallback = this.updateLoadedObjectsCount.bind(this);
 
                 this.textureBuddhaNormalMap = UncompressedTextureLoader.load('data/textures/buddha-normals.png', boundUpdateCallback);
-                this.textureSphericalMap = UncompressedTextureLoader.load('data/textures/sphere_gold3.png', boundUpdateCallback);
+                // this.textureSphericalMap = UncompressedTextureLoader.load('data/textures/sphere_gold3.png', boundUpdateCallback);
+                this.textureSphericalMap = UncompressedTextureLoader.load('data/textures/2048.png', boundUpdateCallback);
                 this.textureBuddhaLightMap = UncompressedTextureLoader.load('data/textures/buddha_lm.png', boundUpdateCallback);
                 this.textureTable = this.loadETC1WithFallback('data/textures/table/marble');
                 this.textureTableLM = UncompressedTextureLoader.load('data/textures/table/table_lm.png', boundUpdateCallback);
@@ -207,6 +208,11 @@ define([
                 this.fillParticles();
 
                 this.initOffscreen();
+
+                this.ext = gl.getExtension('EXT_disjoint_timer_query');
+                this.query = this.ext.createQueryEXT();
+                this.countElapsedTime = 0;
+                this.sumElapsedTime = 0;
             }
 
             fillParticles() {
@@ -300,6 +306,24 @@ define([
                     return;
                 }
 
+                // ...at some point in the future, after returning control to the browser and being called again:
+                var available = this.ext.getQueryObjectEXT(this.query, this.ext.QUERY_RESULT_AVAILABLE_EXT);
+                var disjoint = gl.getParameter(this.ext.GPU_DISJOINT_EXT);
+// console.log(available, disjoint);
+
+                if (available && !disjoint) {
+                    // See how much time the rendering of the object took in nanoseconds.
+                    const timeElapsed = this.ext.getQueryObjectEXT(this.query, this.ext.QUERY_RESULT_EXT);
+
+                    this.sumElapsedTime += timeElapsed;
+                    this.countElapsedTime++;
+                    if(this.countElapsedTime % 100 === 0) {
+                        console.log(Math.round(this.sumElapsedTime / this.countElapsedTime));
+                        this.countElapsedTime=0;
+                        this.sumElapsedTime=0;
+                    }
+                }
+
                 this.positionCamera(0.0);
                 this.setCameraFOV(1.0);
 
@@ -324,15 +348,18 @@ define([
 
                 this.drawSceneObjects();
                 // this.drawTestDepth();
+
             }
 
             drawSceneObjects() {
+                // this.ext.beginQueryEXT(this.ext.TIME_ELAPSED_EXT, this.query);
                 this.drawBuddha();
                 this.drawSky();
                 this.drawTable(1.0);
                 this.drawShaft();
                 this.drawDust();
                 this.drawSmoke();
+                // this.ext.endQueryEXT(this.ext.TIME_ELAPSED_EXT);
             }
 
             drawDepthObjects() {
@@ -581,7 +608,10 @@ define([
 
                 gl.uniformMatrix4fv(shader.view_matrix, false, this.mVMatrix);
                 gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.mMVPMatrix);
+
+                this.ext.beginQueryEXT(this.ext.TIME_ELAPSED_EXT, this.query);
                 gl.drawElements(gl.TRIANGLES, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
+                this.ext.endQueryEXT(this.ext.TIME_ELAPSED_EXT);
             }
 
             drawDiffuseVBOTranslatedRotatedScaled(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
