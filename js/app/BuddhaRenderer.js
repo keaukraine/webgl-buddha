@@ -51,12 +51,12 @@ define([
 
                 this.SCENE_SIZE = { x: 350, y: 350, z: 200 };
                 this.DUST_SPEED = 350000 * 60;
-                this.DUST_FLICKER_SPEED = 10000;
+                this.DUST_FLICKER_SPEED = 2000;
                 this.DUST_COUNT = 8;
                 this.DUST_OFFSET_Z = 200;
                 this.DUST_COLOR = { r: 20 / 256, g: 18 / 256, b: 15 / 256, a: 1 };
-                this.DUST_SPRITE_SIZE = 0.015;
-                this.DUST_SCALE = 0.75;
+                this.DUST_SPRITE_SIZE = 0.3;
+                this.DUST_SCALE = 0.5;
 
                 this.timerDustRotation = 0;
                 this.timerDustFlicker = 0;
@@ -199,7 +199,8 @@ define([
 
                 this.fmDustPatch = new FullModel();
                 this.fmDustPatch.load('data/models/particles_20', boundUpdateCallback);
-                this.textureDust = UncompressedTextureLoader.load('data/textures/dust.png', boundUpdateCallback);
+                // this.textureDust = UncompressedTextureLoader.load('data/textures/dust.png', boundUpdateCallback);
+                this.textureDust = UncompressedTextureLoader.load('data/textures/123.png', boundUpdateCallback);
 
                 this.fmQuad = new FullModel();
                 this.fmQuad.load('data/models/smoke100', boundUpdateCallback);
@@ -454,12 +455,19 @@ define([
                 this.shaderPointSpriteScaledColored.use();
                 this.setTexture2D(0, this.textureDust, this.shaderPointSpriteScaledColored.tex0);
                 gl.uniform1f(this.shaderPointSpriteScaledColored.uThickness, this.dustSpriteSize);
-                gl.uniform4f(this.shaderPointSpriteScaledColored.color, this.DUST_COLOR.r * cosa, this.DUST_COLOR.g * cosa, this.DUST_COLOR.b * cosa, this.DUST_COLOR.a);
+                // gl.uniform4f(this.shaderPointSpriteScaledColored.color, this.DUST_COLOR.r * cosa, this.DUST_COLOR.g * cosa, this.DUST_COLOR.b * cosa, this.DUST_COLOR.a);
+                gl.uniform4f(this.shaderPointSpriteScaledColored.color, 1,1,1,1);
 
                 const a = this.timerDustRotation * 360;
                 const b = -this.timerDustRotation * 360;
 
                 for (let i = 0; i < this.dustCoordinates.length; i++) {
+                    gl.uniform2f(this.shaderPointSpriteScaledColored.spriteOffset, i % 8 * 0.125, 0);
+                    if (i % 2) {
+                        gl.uniform1f(this.shaderPointSpriteScaledColored.uRotation, i * 0.5 + this.timerDustFlicker * Math.PI * 2);
+                    } else {
+                        gl.uniform1f(this.shaderPointSpriteScaledColored.uRotation, i * -0.5 - this.timerDustFlicker * Math.PI * 2);
+                    }
                     if (i < this.dustCoordinates.length / 2) {
                         this.drawPointSpritesVBOTranslatedRotatedScaled(this.shaderPointSpriteScaledColored, this.fmDustPatch,
                             this.dustCoordinates[i].x, this.dustCoordinates[i].y, this.dustCoordinates[i].z,
@@ -472,7 +480,7 @@ define([
                             this.DUST_SCALE, this.DUST_SCALE, this.DUST_SCALE);
                     }
                     if (i == this.dustCoordinates.length / 2) {
-                        gl.uniform4f(this.shaderPointSpriteScaledColored.color, this.DUST_COLOR.r * sina, this.DUST_COLOR.g * sina, this.DUST_COLOR.b * sina, this.DUST_COLOR.a);
+                        // gl.uniform4f(this.shaderPointSpriteScaledColored.color, this.DUST_COLOR.r * sina, this.DUST_COLOR.g * sina, this.DUST_COLOR.b * sina, this.DUST_COLOR.a);
                     }
                 }
 
@@ -629,8 +637,8 @@ define([
                 if (this.lastTime != 0) {
                     elapsed = timeNow - this.lastTime;
 
-                    this.angleYaw += elapsed / this.YAW_COEFF_NORMAL;
-                    this.angleYaw %= 360.0;
+                    // this.angleYaw += elapsed / this.YAW_COEFF_NORMAL;
+                    // this.angleYaw %= 360.0;
 
                     this.timerDustRotation = (timeNow % this.DUST_SPEED) / this.DUST_SPEED;
                     this.timerDustFlicker = (timeNow % this.DUST_FLICKER_SPEED) / this.DUST_FLICKER_SPEED;
