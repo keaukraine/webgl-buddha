@@ -373,6 +373,7 @@ define([
                     const x = this.m_smokeCoordinates[i][0] * 1.5;
                     const y = this.m_smokeCoordinates[i][1] * 1.5;
                     const z = this.m_smokeCoordinates[i][2] * 0.2 + 20;
+                    const rotation = i * 35 + this.timerDustRotation * 3 * (i % 2 === 0 ? 360 : -360);
 
                     this.drawDiffuseVBOFacingCamera(
                         this.shaderSoftDiffuseColored,
@@ -380,7 +381,8 @@ define([
                         (x * cosa - y * sina),
                         (x * sina + y * cosa),
                         z,
-                        2.3, 2.3, 2.3
+                        2.3, 2.3, 2.3,
+                        rotation
                     );
                 }
 
@@ -395,7 +397,7 @@ define([
                 this.setTexture2D(2, this.textureOffscreenDepthID, shader.sDepth);
             }
 
-            drawDiffuseVBOFacingCamera(shader, model, tx, ty, tz, sx, sy, sz) {
+            drawDiffuseVBOFacingCamera(shader, model, tx, ty, tz, sx, sy, sz, rotation) {
                 model.bindBuffers();
 
                 gl.enableVertexAttribArray(shader.rm_Vertex);
@@ -403,19 +405,20 @@ define([
                 gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 4 * (3 + 2), 0);
                 gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, 4 * (3 + 2), 4 * 3);
 
-                this.calculateMVPMatrixForSprite(tx, ty, tz, sx, sy, sz);
+                this.calculateMVPMatrixForSprite(tx, ty, tz, sx, sy, sz, rotation);
 
                 gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.mMVPMatrix);
                 gl.drawElements(gl.TRIANGLES, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
                 this.checkGlError("glDrawElements");
             }
 
-            calculateMVPMatrixForSprite(tx, ty, tz, sx, sy, sz) {
+            calculateMVPMatrixForSprite(tx, ty, tz, sx, sy, sz, rotation) {
                 MatrixUtils.mat4.identity(this.mMMatrix);
                 MatrixUtils.mat4.translate(this.mMMatrix, this.mMMatrix, [tx, ty, tz]);
                 MatrixUtils.mat4.scale(this.mMMatrix, this.mMMatrix, [sx, sy, sz]);
                 MatrixUtils.mat4.multiply(this.mMVPMatrix, this.mVMatrix, this.mMMatrix);
                 this.resetMatrixRotations(this.mMVPMatrix);
+                MatrixUtils.mat4.rotateZ(this.mMVPMatrix, this.mMVPMatrix, rotation);
                 MatrixUtils.mat4.multiply(this.mMVPMatrix, this.mProjMatrix, this.mMVPMatrix);
             }
 
