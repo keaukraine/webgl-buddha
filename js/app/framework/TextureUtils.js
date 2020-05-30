@@ -37,7 +37,7 @@ define(() => {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
         const glFormat = gl.DEPTH_COMPONENT;
-        const glInternalFormat = gl.DEPTH_COMPONENT;
+        const glInternalFormat = gl.DEPTH_COMPONENT16;
         const type = gl.UNSIGNED_SHORT;
 
         // In WebGL, we cannot pass array to depth texture.
