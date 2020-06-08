@@ -222,9 +222,6 @@ define([
             }
 
             initOffscreen() {
-                const ext = gl.getExtension('WEBGL_depth_texture');
-                console.log(ext);
-
                 this.textureOffscreenColorID = TextureUtils.createNPOTTexture(this.canvas.width, this.canvas.height, false);
                 this.checkGlError("color");
                 this.textureOffscreenDepthID = TextureUtils.createDepthTexture(this.canvas.width, this.canvas.height);
@@ -575,15 +572,10 @@ define([
                 gl.enableVertexAttribArray(shader.rm_TexCoord1);
                 gl.enableVertexAttribArray(shader.rm_Normal);
 
-                gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 28, 0);
-                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.HALF_FLOAT, false, 28, 4 * 3);
-                gl.vertexAttribPointer(shader.rm_TexCoord1, 2, gl.HALF_FLOAT, false, 28, 4 * 3 + 2 * 2);
-                gl.vertexAttribPointer(shader.rm_Normal, 3, gl.HALF_FLOAT, false, 28, 4 * 3 + 2 * 2 + 2 * 2);
-
-                // gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 24, 0);
-                // gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.HALF_FLOAT, false, 24, 4 * 3);
-                // gl.vertexAttribPointer(shader.rm_TexCoord1, 2, gl.HALF_FLOAT, false, 24, 4 * 3 + 2 * 2);
-                // gl.vertexAttribPointer(shader.rm_Normal, 3, gl.BYTE, true, 24, 4 * 3 + 2 * 2 + 2 * 2);
+                gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.HALF_FLOAT, false, 16, 0);
+                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.UNSIGNED_BYTE, true, 16, 2 * 3);
+                gl.vertexAttribPointer(shader.rm_TexCoord1, 2, gl.UNSIGNED_BYTE, true, 16, 2 * 3 + 1 * 2);
+                gl.vertexAttribPointer(shader.rm_Normal, 3, gl.BYTE, true, 16, 2 * 3 + 1 * 2 + 1 * 2);
 
                 this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);
 
@@ -598,8 +590,8 @@ define([
                 gl.enableVertexAttribArray(shader.rm_Vertex);
                 gl.enableVertexAttribArray(shader.rm_TexCoord0);
 
-                gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 4 * (3 + 2), 0);
-                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, 4 * (3 + 2), 4 * 3);
+                gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.HALF_FLOAT, false, 8, 0);
+                gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.UNSIGNED_BYTE, true, 8, 2 * 3);
 
                 this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);
 
