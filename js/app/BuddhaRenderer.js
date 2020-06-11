@@ -576,6 +576,7 @@ define([
                 gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.UNSIGNED_BYTE, true, 16, 2 * 3);
                 gl.vertexAttribPointer(shader.rm_TexCoord1, 2, gl.UNSIGNED_BYTE, true, 16, 2 * 3 + 1 * 2);
                 gl.vertexAttribPointer(shader.rm_Normal, 3, gl.BYTE, true, 16, 2 * 3 + 1 * 2 + 1 * 2);
+                // gl.vertexAttribPointer(shader.rm_Normal, 4, gl.INT_2_10_10_10_REV, true, 16, 12);
 
                 this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);
 
