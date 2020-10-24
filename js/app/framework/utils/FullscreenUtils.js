@@ -5,17 +5,17 @@
 
 'use strict';
 
-define(function() {
+define(function () {
 
-    function FullScreenUtils() {}
+    function FullScreenUtils() { }
 
     /**
      * Enters fullscreen
      */
-    FullScreenUtils.enterFullScreen = function() {
+    FullScreenUtils.enterFullScreen = function () {
         if (document.documentElement.requestFullscreen) {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
+                document.documentElement.requestFullscreen({ navigationUI: "hide" });
             }
         }
         if (document.documentElement.webkitRequestFullScreen) {
@@ -33,7 +33,7 @@ define(function() {
     /**
      * Exits fullscreen
      */
-    FullScreenUtils.exitFullScreen = function() {
+    FullScreenUtils.exitFullScreen = function () {
         if (document.documentElement.requestFullscreen) {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
@@ -55,7 +55,7 @@ define(function() {
      * Adds cross-browser fullscreenchange event
      * @param {function} exitHandler - function to be called on fullscreenchange event
      */
-    FullScreenUtils.addFullScreenListener = function(exitHandler) {
+    FullScreenUtils.addFullScreenListener = function (exitHandler) {
         if (document.documentElement.requestFullscreen) {
             document.addEventListener('fullscreenchange', exitHandler, false);
         }
@@ -71,7 +71,7 @@ define(function() {
      * Checks fullscreen state
      * @return {Boolean} - true if fullscreen is active, false if not
      */
-    FullScreenUtils.isFullScreen = function() {
+    FullScreenUtils.isFullScreen = function () {
         if (document.documentElement.requestFullscreen) {
             return !!document.fullscreenElement;
         }
@@ -87,7 +87,7 @@ define(function() {
      * Checks for full-screen API availability
      * @return {Boolean} - true if fullscrees is supported, false if not
      */
-    FullScreenUtils.isFullScreenSupported = function() {
+    FullScreenUtils.isFullScreenSupported = function () {
         return !!document.documentElement.requestFullscreen || !!document.documentElement.webkitRequestFullScreen || !!document.documentElement.mozRequestFullScreen;
     }
 
