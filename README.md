@@ -4,6 +4,8 @@ This demo is a WebGL port of Android live wallpaper *[3D Buddha Live Wallpaper](
 
 Live demo page is available here: https://keaukraine.github.io/webgl-buddha/index.html
 
+Article explaining implementation of soft particles used in this demo - https://keaukraine.medium.com/implementing-soft-particles-in-webgl-and-opengl-es-b968d61133b0
+
 Works in latest Chrome, Firefox, Safari and Edge.
 
 # Used Libraries
